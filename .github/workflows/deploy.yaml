@@ -26,6 +26,12 @@ jobs:
           if git rev-parse -q --verify HEAD~1 >/dev/null; then
             git archive HEAD~1 deploy 2>/dev/null | tar -x -C /tmp/before --strip-components=1 || true
           fi
+      # Diagnostic (2026-11-01): the OIDC token's claims, payload only (never the signed token, so nothing printed
+      # can be replayed), to see why Clearance answered 401.
+      - name: OIDC claims (diagnostic)
+        run: |
+          tok=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=clearance" | python3 -c 'import sys,json;print(json.load(sys.stdin)["value"])')
+          python3 -c 'import sys,json,base64;p=sys.argv[1].split(".")[1];p+="="*(-len(p)%4);c=json.loads(base64.urlsafe_b64decode(p));print(json.dumps({k:c.get(k) for k in ("iss","aud","sub","repository","ref","exp","iat","nbf")}))' "$tok"
       - uses: jfillman/clearance/register@v0.24.1
         with:
           url: https://clearance-webhook.hangarplatform.dev
