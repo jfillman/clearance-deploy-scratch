@@ -1,0 +1,18 @@
+# A deploy job gated by Hangar Clearance (clearance docs/provenance-app.md, phase 2a). It deploys nothing: the job only
+# runs once Clearance approves the `prod` environment's deployment protection rule for this commit.
+#   no change registered for the commit  -> rejected (DG-UNREGISTERED)
+#   a change cleared for it              -> approved, the job runs
+#   a change holding for people          -> the run waits, and goes when they clear it
+name: deploy
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - run: echo "deploying ${GITHUB_SHA} to prod (nothing is deployed; Clearance let this job start)"
