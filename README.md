@@ -6,3 +6,5 @@ A scratch repository for Clearance's deployment protection rule (the Hangar Clea
 `.github/workflows/deploy.yaml` has one job targeting the `prod` environment. The environment lists Hangar Clearance
 under *Deployment protection rules*, so the job starts only when Clearance approves: when the deployment gate has a
 cleared change for this repository, the commit and env `prod`. It deploys nothing.
+
+Held-case test, 2026-11-01: this commit is registered as a tier 2 change (a replica count) that waits for a person.
