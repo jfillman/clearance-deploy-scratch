@@ -1,0 +1,15 @@
+# What this scratch repo "deploys" to prod: rendered manifests, diffed by `clearance register` (nothing is applied).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-scratch
+  namespace: deploy-scratch-prod
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: deploy-scratch}}
+  template:
+    metadata: {labels: {app: deploy-scratch}}
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/jfillman/deploy-scratch@sha256:0000000000000000000000000000000000000000000000000000000000000001

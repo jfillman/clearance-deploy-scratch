@@ -1,8 +1,8 @@
-# A deploy job gated by Hangar Clearance (clearance docs/provenance-app.md, phase 2a). It deploys nothing: the job only
-# runs once Clearance approves the `prod` environment's deployment protection rule for this commit.
-#   no change registered for the commit  -> rejected (DG-UNREGISTERED)
-#   a change cleared for it              -> approved, the job runs
-#   a change holding for people          -> the run waits, and goes when they clear it
+# A deploy job gated by Hangar Clearance (clearance docs/provenance-app.md, phases 2a and 2b). It deploys nothing.
+#   register: `clearance register` diffs deploy/ at the parent commit against this commit and registers the change
+#             with Clearance's deployment gate, authenticated by this workflow's own OIDC token (id-token: write).
+#   deploy:   targets the `prod` environment, whose protection rule is the Hangar Clearance App:
+#             cleared -> approved; holding for people -> waits until they decide; denied/unregistered -> rejected.
 name: deploy
 on:
   workflow_dispatch:
@@ -11,7 +11,32 @@ on:
 permissions:
   contents: read
 jobs:
+  register:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - name: Rendered manifests before and after this commit
+        run: |
+          mkdir -p /tmp/before /tmp/after
+          cp -r deploy/. /tmp/after/
+          if git rev-parse -q --verify HEAD~1 >/dev/null; then
+            git archive HEAD~1 deploy 2>/dev/null | tar -x -C /tmp/before --strip-components=1 || true
+          fi
+      - uses: jfillman/clearance/register@v0.23.0
+        with:
+          url: https://clearance-webhook.hangarplatform.dev
+          app: deploy-scratch
+          env: prod
+          cluster: hangar-dev
+          before: /tmp/before
+          after: /tmp/after
+          args: --check ci=pass
   deploy:
+    needs: register
     runs-on: ubuntu-latest
     environment: prod
     steps:
